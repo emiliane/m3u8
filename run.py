@@ -1,17 +1,61 @@
 import subprocess
+from datetime import datetime
 
-where = 'Work'
-rangestart = 37
-rangestop = 100
+where = 'Dowload'
+
+numberOfZero = 5
+numberParts = 10000
+
+rangestart = 5553
+rangestop = 5555
 setOfStep = 10
 
-def download(location, rangestart, rangestop):
+dt = datetime.now()
+ts = datetime.timestamp(dt)
+where = where + '/' + str(ts)
+
+def myrunsubprocess(command):
+    print('Run command:', command)
+    try:
+        subprocess.run(command, shell=True, check=True, text=True)
+    except:
+        print("Something went wrong!")
+
+def downloadAll(location, rangestart, rangestop, playlist, extension):
+    tempfolder = location + '/All/' + str(rangestart) + '-' + str(rangestop - 1)
+    mkvfolder = location + '/All/mkv'
+    print(tempfolder, mkvfolder)
+    
+    myrunsubprocess('mkdir -p ' + tempfolder)
+    myrunsubprocess('mkdir -p ' + mkvfolder)
+    
+    for x in range(rangestart, rangestop):
+        number = "{:05d}".format(x)
+
+        curl = 'curl https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/' + playlist + '_' + number + '.' + extension + ' -o ' + tempfolder +'/'+ number + '.ts'
+
+        myrunsubprocess(curl)
+
+    file = 'ls '+ tempfolder + '/*.ts | sort -V > ' + tempfolder + '/' + extension + '.txt'
+
+    print(file)
+    myrunsubprocess(file)
+
+    ffmpegts = 'ffmpeg -y -f mpegts -i concatf:' + tempfolder + '/' + extension + '.txt -c copy ' + tempfolder + '/ts.mkv'
+    print (ffmpegts)
+    myrunsubprocess(ffmpegts)
+
+    deletetempfolder = 'rm -r ' + tempfolder
+    print(deletetempfolder)
+    myrunsubprocess(deletetempfolder)
+
+
     tempfolder = location + '/' + str(rangestart) + '-' + str(rangestop - 1)
     mkvfolder = location + '/mkv'
     print(tempfolder, mkvfolder)
     
-    subprocess.run('mkdir -p ' + tempfolder, shell=True, check=True, text=True)
-    subprocess.run('mkdir -p ' + mkvfolder, shell=True, check=True, text=True)
+    myrunsubprocess('mkdir -p ' + tempfolder)
+    myrunsubprocess('mkdir -p ' + mkvfolder)
     
     for x in range(rangestart, rangestop):
         number = "{:05d}".format(x)
@@ -19,38 +63,79 @@ def download(location, rangestart, rangestop):
         curlts = 'curl https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_1_' + number + '.ts -o ' + tempfolder +'/'+ number + '.ts'
         curlaac = 'curl https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_6_' + number + '.aac -o ' + tempfolder +'/'+ number + '.aac'
 
-        print(curlts)    
-        subprocess.run(curlts, shell=True, check=True, text=True)
-        print(curlaac)
-        subprocess.run(curlaac ,shell=True, check=True, text=True)
+        myrunsubprocess(curlts)
+        myrunsubprocess(curlaac)
 
     filets = 'ls '+ tempfolder + '/*.ts | sort -V > ' + tempfolder + '/ts.txt'
     fileaac = 'ls '+ tempfolder + '/*.aac | sort -V > ' + tempfolder + '/aac.txt'
 
     print(filets)
-    subprocess.run(filets, shell=True, check=True, text=True)
+    myrunsubprocess(filets)
     print(fileaac)
-    subprocess.run(fileaac, shell=True, check=True, text=True)
+    myrunsubprocess(fileaac)
 
     ffmpegts = 'ffmpeg -y -f mpegts -i concatf:' + tempfolder + '/ts.txt -c copy ' + tempfolder + '/ts.mkv'
     print (ffmpegts)
-    subprocess.run(ffmpegts, shell=True, check=True, text=True)
+    myrunsubprocess(ffmpegts)
 
     ffmpegaac = 'ffmpeg -y -i concatf:' + tempfolder + '/aac.txt -c copy ' + tempfolder + '/aac.mkv'
     print (ffmpegaac)
-    subprocess.run(ffmpegaac, shell=True, check=True, text=True)
+    myrunsubprocess(ffmpegaac)
 
     ffmpegvideo = 'ffmpeg -y -i ' + tempfolder + '/ts.mkv -i ' + tempfolder + '/aac.mkv -c copy ' + mkvfolder + '/video' + str(rangestart) + '-' + str(rangestop - 1) + '.mkv'
     print (ffmpegvideo)
-    subprocess.run(ffmpegvideo, shell=True, check=True, text=True)
+    myrunsubprocess(ffmpegvideo)
 
     deletetempfolder = 'rm -r ' + tempfolder
     print(deletetempfolder)
-    subprocess.run(deletetempfolder, shell=True, check=True, text=True)
+    myrunsubprocess(deletetempfolder)
 
-for x in range(rangestart, rangestop):
-    a = (x) * setOfStep
-    b = (x + 1) * setOfStep
-    print(x, a, b)
+def downloadGroupedNew(location, rangestop, rangestart=0, step=5, clear=False):
+    print('Download at' ,location, 'from', rangestart, 'to', rangestop, 'grouped by', step)
 
-    download(where, a, b)
+    newrangestart = int(rangestart // step)
+    newrangestop = int(rangestop // step) + 1
+
+    for x in range(newrangestart, newrangestop):
+        a = (x) * step
+        b = (x + 1) * step
+
+        tempfolder = location + '/temp/' + str(a) + '-' + str(b - 1)
+        mkvfolder = location + '/mkv'
+        
+        myrunsubprocess('mkdir -p ' + tempfolder)
+        myrunsubprocess('mkdir -p ' + mkvfolder)
+
+        for x in range(a, b):
+            if (x > rangestop):
+                break
+            elif (x >= rangestart):
+                numberZero = '{:0'+ str(numberOfZero) + 'd}'
+                number = numberZero.format(x)
+
+                curlts = 'curl https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_1_' + number + '.ts -o ' + tempfolder +'/'+ number + '.ts'
+                curlaac = 'curl https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_6_' + number + '.aac -o ' + tempfolder +'/'+ number + '.aac'
+
+                myrunsubprocess(curlts)
+                myrunsubprocess(curlaac)
+
+        filets = 'ls '+ tempfolder + '/*.ts | sort -V > ' + tempfolder + '/ts.txt'
+        fileaac = 'ls '+ tempfolder + '/*.aac | sort -V > ' + tempfolder + '/aac.txt'
+
+        myrunsubprocess(filets)
+        myrunsubprocess(fileaac)
+
+        ffmpegts = 'ffmpeg -y -f mpegts -i concatf:' + tempfolder + '/ts.txt -c copy ' + tempfolder + '/ts.mkv'
+        myrunsubprocess(ffmpegts)
+
+        ffmpegaac = 'ffmpeg -y -i concatf:' + tempfolder + '/aac.txt -c copy ' + tempfolder + '/aac.mkv'
+        myrunsubprocess(ffmpegaac)
+
+        ffmpegvideo = 'ffmpeg -y -i ' + tempfolder + '/ts.mkv -i ' + tempfolder + '/aac.mkv -c copy ' + mkvfolder + '/video' + str(rangestart) + '-' + str(rangestop - 1) + '.mkv'
+        myrunsubprocess(ffmpegvideo)
+
+        deletetempfolder = 'rm -r ' + tempfolder
+        if clear:
+            myrunsubprocess(deletetempfolder)
+
+downloadGroupedNew(where, rangestop, rangestart)
