@@ -3,12 +3,21 @@ import urllib.request
 from datetime import datetime
 
 where = 'Dowload'
+
 # https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist.m3u8
+# https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/4/playlist.m3u8
+
 playlists = [
+    #ron
     'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_1.m3u8',
     'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_6.m3u8',
     'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_7.m3u8',
+    #eng
+    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/4/playlist_1.m3u8',
+    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/4/playlist_4.m3u8',
+    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/4/playlist_7.m3u8',
     ]
+
 numberOfZero = 5
 numberParts = 10000
 
