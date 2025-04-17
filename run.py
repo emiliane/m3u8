@@ -21,8 +21,8 @@ playlists = [
     'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/5/playlist_1.m3u8',
     'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/5/playlist_6.m3u8',
     #rom
-    #'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_1.m3u8',
-    #'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_6.m3u8',
+    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_1.m3u8',
+    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_6.m3u8',
     ]
 
 numberOfZero = 5
@@ -38,11 +38,19 @@ where = where + '/' + str(ts)
 
 def myrunsubproces(command, shell=True, check=True, text=True):
     print('Run command:', command)
-    try:
-        subprocess.run(command, shell=shell, check=check, text=text)
-        return
-    except:
-        print("Something went wrong!")
+
+    done = True
+    i = 1
+    while done:
+        if i > 1:
+            print('Run ' + str(i) + ' of command:', command)
+
+        try:
+            subprocess.run(command, shell=shell, check=check, text=text)
+            return
+        except:
+            print("Something went wrong! We will try again.")
+        i = i + 1
 
 async def main():
     #command = shlex.split(command)
@@ -98,7 +106,7 @@ def commandForDownloadPlaylists(location, playlists):
         mediafile = 'cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "' + address + '/{}" > ' + txtfile
         myrunsubproces(mediafile)
 
-        curldownloadfile = 'cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "curl ' + address + '/{} -o ' + tempsubfolder + '/{}" > ' + curlfile
+        curldownloadfile = 'cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "curl -m 55555 ' + address + '/{} > ' + tempsubfolder + '/{}" > ' + curlfile
         myrunsubproces(curldownloadfile)
 
         curlall = 'curl … $(cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "' + address + '/{} -o '+ tempsubfolder + '/{}")'
