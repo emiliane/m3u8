@@ -20,6 +20,9 @@ playlists = [
     #eng
     'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/5/playlist_1.m3u8',
     'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/5/playlist_6.m3u8',
+    #rom
+    #'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_1.m3u8',
+    #'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_6.m3u8',
     ]
 
 numberOfZero = 5
@@ -67,6 +70,7 @@ async def myrunsubprocesasync(command):
 def commandForDownloadPlaylists(location, playlists):
     curlcommands = []
     txtfiles = []
+    curlfiles = []
     for playlist in playlists:
         print('Playlist:', playlist)
         parts = playlist.rsplit('/', 3)
@@ -83,6 +87,7 @@ def commandForDownloadPlaylists(location, playlists):
         txtfile = tempfolder + '/' +  extension + '.txt'
         curlfile = tempfolder + '/' +  extension + '.curl.txt'
         txtfiles.append(txtfile)
+        curlfiles.append(curlfile)
 
         myrunsubproces('mkdir -p ' + tempfolder)
         myrunsubproces('mkdir -p ' + tempsubfolder)
@@ -99,7 +104,7 @@ def commandForDownloadPlaylists(location, playlists):
         curlall = 'curl … $(cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "' + address + '/{} -o '+ tempsubfolder + '/{}")'
         curlcommands.append(curlall)
 
-    return curlcommands, txtfiles
+    return curlcommands, txtfiles, curlfiles
 
 def downloadAll(location, rangestart, rangestop, playlist, extension):
     tempfolder = location + '/All/' + str(rangestart) + '-' + str(rangestop - 1)
@@ -214,7 +219,7 @@ def downloadGroupedNew(location, rangestop, rangestart=0, step=5, clear=False):
             myrunsubproces(deletetempfolder)
 
 #downloadGroupedNew(where, rangestop, rangestart, step=setOfStep)
-commands = commandForDownloadPlaylists(where, playlists)
+commands, files1, files2 = commandForDownloadPlaylists(where, playlists)
 
 #loop = asyncio.new_event_loop()
 #asyncio.set_event_loop(loop)
@@ -239,3 +244,26 @@ for command in commands:
 
 #loop.run_until_complete(asyncio.wait(tasks))
 #loop.close()
+
+start = 5555
+stop = start + 10
+lenght = stop - start
+
+for file in files2:
+
+    # open the sample file used 
+    file = open(file) 
+
+    # read the content of the file opened 
+    content = file.readlines()
+
+    for line in content:
+        print(line)
+        myrunsubproces(line)
+
+    '''
+    for i in range(start, stop):
+        print(i)
+        print(content[i])
+        myrunsubproces(content[i])
+    '''
