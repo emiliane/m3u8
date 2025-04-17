@@ -4,20 +4,22 @@ import shlex
 from datetime import datetime
 from subprocess import Popen, PIPE
 
-where = 'Dowload'
+where = '/sysroot/home/emisar/Documente/Dezvoltare/Gather25/Dowload'
 
+# https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/playlist.m3u8
+# https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/1/playlist.m3u8
+# https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/2/playlist.m3u8
+# https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/3/playlist.m3u8
 # https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist.m3u8
-# https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/4/playlist.m3u8
+# https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/5/playlist.m3u8
+
+# https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/5/playlist.m3u8
+# https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/playlist.m3u8
 
 playlists = [
-    #ron
-    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_1.m3u8',
-    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_6.m3u8',
-    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_DBF5334817/4/playlist_7.m3u8',
     #eng
-    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/4/playlist_1.m3u8',
-    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/4/playlist_6.m3u8',
-    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/4/playlist_7.m3u8',
+    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/5/playlist_1.m3u8',
+    'https://storage.sardius.media/archives/2153BA7C697A514/events/site_daa826D4F1/5/playlist_6.m3u8',
     ]
 
 numberOfZero = 5
@@ -31,13 +33,28 @@ dt = datetime.now()
 ts = datetime.timestamp(dt)
 where = where + '/' + str(ts)
 
-def myrunsubproces(command):
+def myrunsubproces(command, shell=True, check=True, text=True):
     print('Run command:', command)
     try:
-        subprocess.run(command, shell=True, check=True, text=True)
+        subprocess.run(command, shell=shell, check=check, text=text)
         return
     except:
         print("Something went wrong!")
+
+async def main():
+    #command = shlex.split(command)
+    proc = await asyncio.create_subprocess_exec(
+       'ls','-lha',
+       stdout=asyncio.subprocess.PIPE,
+       stderr=asyncio.subprocess.PIPE)
+
+    # do something else while ls is working
+
+    # if proc takes very long to complete, the CPUs are free to use   cycles for 
+    # other processes
+    stdout, stderr = await proc.communicate()
+ 
+asyncio.run(main())
 
 async def myrunsubprocesasync(command):
     print('Run command:', command)
@@ -49,6 +66,7 @@ async def myrunsubprocesasync(command):
 
 def commandForDownloadPlaylists(location, playlists):
     curlcommands = []
+    txtfiles = []
     for playlist in playlists:
         print('Playlist:', playlist)
         parts = playlist.rsplit('/', 3)
@@ -61,20 +79,27 @@ def commandForDownloadPlaylists(location, playlists):
         print(address, name, extension, '('+ stream +')')
 
         tempfolder = location + '/Playlist/' + stream + '/' + name
+        tempsubfolder =  tempfolder + '/' + extension
+        txtfile = tempfolder + '/' +  extension + '.txt'
+        curlfile = tempfolder + '/' +  extension + '.curl.txt'
+        txtfiles.append(txtfile)
+
         myrunsubproces('mkdir -p ' + tempfolder)
-        myrunsubproces('mkdir -p ' + tempfolder + '/' + extension)
+        myrunsubproces('mkdir -p ' + tempsubfolder)
 
         playlist = 'curl ' + playlist + ' -o ' + tempfolder +'/' + name + '.' + extension
         myrunsubproces(playlist)
 
-        catfile = 'cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "' + address + '/{} -o '+ tempfolder + '/{}" > ' + tempfolder + '/' +  extension + '.txt'
-        myrunsubproces(catfile)
+        mediafile = 'cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "' + address + '/{}" > ' + txtfile
+        myrunsubproces(mediafile)
 
-        curlall = 'curl … $(cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "' + address + '/{} -o '+ tempfolder + '/' + extension + '/{}")'
+        curldownloadfile = 'cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "curl ' + address + '/{} -o ' + tempsubfolder + '/{}" > ' + curlfile
+        myrunsubproces(curldownloadfile)
+
+        curlall = 'curl … $(cat ' + tempfolder + '/' + name + '.' + extension + ' | grep ' + name + ' | sort -V | xargs -I "{}" echo "' + address + '/{} -o '+ tempsubfolder + '/{}")'
         curlcommands.append(curlall)
 
-    return curlcommands
-    
+    return curlcommands, txtfiles
 
 def downloadAll(location, rangestart, rangestop, playlist, extension):
     tempfolder = location + '/All/' + str(rangestart) + '-' + str(rangestop - 1)
@@ -198,6 +223,9 @@ commands = commandForDownloadPlaylists(where, playlists)
 for command in commands:
     print(command)
     
+    #x = input("Run command?")
+    #print("Hello, " + x)
+    
     #command = shlex.split(command)
     #print(command)
     #process = Popen(command, stdout=PIPE, stderr=PIPE)
@@ -207,7 +235,7 @@ for command in commands:
     #task = loop.create_task(myrunsubprocesasync(command))
     #tasks.append(task)
     
-    myrunsubproces(command)
+   #myrunsubproces(command)
 
 #loop.run_until_complete(asyncio.wait(tasks))
 #loop.close()
